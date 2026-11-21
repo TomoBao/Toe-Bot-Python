@@ -222,7 +222,10 @@ class ApplicationModal(discord.ui.Modal):
                 await message.edit(view=ReviewView())
 
             except (discord.HTTPException, sqlite3.Error):
-
+                logger.exception(
+                    "Application submission failed (guild_id=%s, channel_id=%s, kind=%s)",
+                    interaction.guild_id, channel.id, self.kind
+                )
                 db.rollback()
 
                 if message:
