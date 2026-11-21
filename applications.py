@@ -570,7 +570,10 @@ class Applications(commands.Cog):
 
         if (
             interaction.guild_id != config.GUILD_ID
-            or not interaction.user.guild_permissions.administrator
+            or not (
+                interaction.user.id == interaction.guild.owner_id
+                or interaction.user.guild_permissions.administrator
+            )
         ):
             await interaction.response.send_message(
                 "Administrator permission required.",
