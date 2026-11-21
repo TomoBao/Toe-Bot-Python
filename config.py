@@ -5,6 +5,7 @@ load_dotenv()
 
 TOKEN = os.environ["DISCORD_TOKEN"]
 GUILD_ID = int(os.environ["GUILD_ID"])
+OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
 APPLICATION_LOG_CHANNEL_ID = int(
     os.environ["APPLICATION_LOG_CHANNEL_ID"]
