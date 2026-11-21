@@ -38,6 +38,7 @@ logger = logging.getLogger("toe_bot")
 class ToeBot(commands.Bot):
     async def setup_hook(self):
         await self.load_extension("applications")
+        await self.load_extension("community")
         guild = discord.Object(id=config.GUILD_ID)
         self.tree.copy_global_to(guild=guild)
         synced = await self.tree.sync(guild=guild)
