@@ -589,7 +589,13 @@ class Applications(commands.Cog):
             except discord.HTTPException:
                 logger.exception("Unable to fetch guild owner for setup")
 
-        is_owner = owner_id is not None and interaction.user.id == owner_id
+        # An explicitly configured owner can run setup even when Discord
+        # does not provide guild owner metadata.
+        configured_owner_id = config.OWNER_ID
+        is_owner = (
+            (configured_owner_id != 0 and interaction.user.id == configured_owner_id)
+            or (owner_id is not None and interaction.user.id == owner_id)
+        )
 
         logger.info(
             "setup-applications: guild_match=%s owner_match=%s "
