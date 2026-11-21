@@ -571,6 +571,12 @@ class Applications(commands.Cog):
         interaction: discord.Interaction
     ):
 
+        logger.info(
+            "Owner check: user_id=%s guild_owner_id=%s",
+            interaction.user.id,
+            interaction.guild.owner_id if interaction.guild else None
+        )
+
         same_guild = interaction.guild_id == config.GUILD_ID
         is_owner = (
             interaction.guild is not None
