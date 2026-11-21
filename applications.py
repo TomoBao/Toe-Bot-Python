@@ -1,5 +1,6 @@
 
 import asyncio
+import logging
 import sqlite3
 import discord
 
@@ -7,6 +8,8 @@ from discord import app_commands
 from discord.ext import commands
 
 import config
+
+logger = logging.getLogger('toe_bot.applications')
 
 
 # ==========================================
@@ -568,13 +571,25 @@ class Applications(commands.Cog):
         interaction: discord.Interaction
     ):
 
-        if (
-            interaction.guild_id != config.GUILD_ID
-            or not (
-                interaction.user.id == interaction.guild.owner_id
-                or interaction.user.guild_permissions.administrator
+        same_guild = interaction.guild_id == config.GUILD_ID
+        is_owner = (
+            interaction.guild is not None
+            and interaction.user.id == interaction.guild.owner_id
+        )
+        is_admin = interaction.user.guild_permissions.administrator
+
+        logger.info(
+            "setup-applications: guild_match=%s owner_match=%s "
+            "administrator=%s",
+            same_guild, is_owner, is_admin
+        )
+
+        if not same_guild or not (is_owner or is_admin):
+            logger.warning(
+                "setup-applications denied: guild_match=%s "
+                "owner_match=%s administrator=%s",
+                same_guild, is_owner, is_admin
             )
-        ):
             await interaction.response.send_message(
                 "Administrator permission required.",
                 ephemeral=True
