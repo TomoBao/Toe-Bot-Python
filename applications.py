@@ -579,8 +579,9 @@ class Applications(commands.Cog):
         owner_id = interaction.guild.owner_id if interaction.guild else None
 
         # A partial guild cache can leave owner_id unset.
-        # Fetch authoritative guild metadata before checking ownership.
-        if same_guild and owner_id is None:
+        # Skip the API lookup when the configured owner already matches.
+        if (same_guild and owner_id is None
+                and interaction.user.id != config.OWNER_ID):
             try:
                 fetched_guild = await interaction.client.fetch_guild(
                     interaction.guild_id
@@ -643,10 +644,39 @@ class Applications(commands.Cog):
 
         await interaction.response.defer(ephemeral=True)
 
-        await interaction.channel.send(
-            embed=embed,
-            view=ApplicationView()
-        )
+        try:
+            if interaction.channel is None:
+                await interaction.followup.send(
+                    "Cannot access this channel. Check the bot's server installation.",
+                    ephemeral=True
+                )
+                return
+
+            await interaction.channel.send(
+                embed=embed,
+                view=ApplicationView()
+            )
+        except discord.Forbidden:
+            logger.warning(
+                "Cannot post application panel: missing channel access "
+                "(guild_id=%s, channel_id=%s)",
+                interaction.guild_id, interaction.channel_id
+            )
+            await interaction.followup.send(
+                "Cannot post the panel here. Give Toe Bot View Channel, "
+                "Send Messages, and Embed Links permissions, and confirm "
+                "it is installed in this server.",
+                ephemeral=True
+            )
+            return
+        except discord.HTTPException:
+            logger.exception("Failed to post application panel")
+            await interaction.followup.send(
+                "Discord could not create the application panel. "
+                "Please check the bot logs.",
+                ephemeral=True
+            )
+            return
 
         await interaction.followup.send(
             "Application panel created!",
