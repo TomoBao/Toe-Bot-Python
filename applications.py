@@ -571,33 +571,40 @@ class Applications(commands.Cog):
         interaction: discord.Interaction
     ):
 
-        logger.info(
-            "Owner check: user_id=%s guild_owner_id=%s",
-            interaction.user.id,
-            interaction.guild.owner_id if interaction.guild else None
-        )
-
         same_guild = interaction.guild_id == config.GUILD_ID
-        is_owner = (
-            interaction.guild is not None
-            and interaction.user.id == interaction.guild.owner_id
+        is_admin = (
+            isinstance(interaction.user, discord.Member)
+            and interaction.user.guild_permissions.administrator
         )
-        is_admin = interaction.user.guild_permissions.administrator
+        owner_id = interaction.guild.owner_id if interaction.guild else None
+
+        # A partial guild cache can leave owner_id unset.
+        # Fetch authoritative guild metadata before checking ownership.
+        if same_guild and owner_id is None:
+            try:
+                fetched_guild = await interaction.client.fetch_guild(
+                    interaction.guild_id
+                )
+                owner_id = fetched_guild.owner_id
+            except discord.HTTPException:
+                logger.exception("Unable to fetch guild owner for setup")
+
+        is_owner = owner_id is not None and interaction.user.id == owner_id
 
         logger.info(
             "setup-applications: guild_match=%s owner_match=%s "
-            "administrator=%s",
-            same_guild, is_owner, is_admin
+            "administrator=%s owner_id_available=%s",
+            same_guild, is_owner, is_admin, owner_id is not None
         )
 
         if not same_guild or not (is_owner or is_admin):
             logger.warning(
                 "setup-applications denied: guild_match=%s "
-                "owner_match=%s administrator=%s",
-                same_guild, is_owner, is_admin
+                "owner_match=%s administrator=%s owner_id_available=%s",
+                same_guild, is_owner, is_admin, owner_id is not None
             )
             await interaction.response.send_message(
-                "Administrator permission required.",
+                "Only the server owner or an administrator can use this command.",
                 ephemeral=True
             )
             return
